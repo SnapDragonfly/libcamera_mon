@@ -25,6 +25,22 @@ int parse_buf_data_raw(RingBuffer *ring_buffer, int *frame, float *fps, int *siz
     char *token = strtok(temp_buffer, "\n");
 
     while (token) {
+        // Debug
+        //printf("token: %s\n", token);
+
+        //safety measurement 1
+        extern int required_data_size;
+        if (token - temp_buffer > required_data_size*0.8) {
+            printf("safety measurement 1: %ld:%s\n", token - temp_buffer, token);
+            break;
+        }
+
+        //safety measurement 2
+        if (strlen(token) > 55) {
+            printf("safety measurement 2: %s\n", token);
+            return -5;
+        }
+        
         // Parse the frame number from lines starting with "Viewfinder frame"
         if (strncmp(token, "Viewfinder frame", 16) == 0) {
             if (sscanf(token, "Viewfinder frame %d", frame) == 1) {
@@ -98,6 +114,19 @@ int parse_buf_data_arithmetic(RingBuffer *ring_buffer, int *frame, float *fps, i
     while (token) {
         // Debug
         //printf("token: %s\n", token);
+
+        //safety measurement 1
+        extern int required_data_size;
+        if (token - temp_buffer > required_data_size*0.8) {
+            printf("safety measurement 1: %ld:%s\n", token - temp_buffer, token);
+            break;
+        }
+
+        //safety measurement 2
+        if (strlen(token) > 55) {
+            printf("safety measurement 2: %s\n", token);
+            return -5;
+        }
 
         // Parse the frame number from lines starting with "Viewfinder frame"
         if (strncmp(token, "Viewfinder frame", 16) == 0) {
