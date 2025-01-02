@@ -3,6 +3,8 @@
 #include <linux/uaccess.h>
 #include <linux/slab.h>
 
+#include "version.h"
+
 #define PROC_NAME "libcamera_proc"
 #define PROC_MAX_SIZE 1024
 
@@ -57,6 +59,7 @@ static int __init proc_file_init(void) {
         return -ENOMEM;
     }
 
+    printk(KERN_INFO "Ver: %s Compiled at: %s\n", GIT_VERSION, VERSION_STRING);
     printk(KERN_INFO "/proc/%s created\n", PROC_NAME);
     return 0;
 }

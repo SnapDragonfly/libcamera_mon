@@ -10,6 +10,7 @@
 #include "ring_buffer.h"
 #include "filter.h"
 #include "config.h"
+#include "version.h"
 
 // Global variables to hold configurable parameters
 int buffer_size                     = FIFO_BUFFER_SIZE;
@@ -24,6 +25,7 @@ float cutoff_frequency              = CUTOFF_FREQUENCY;
 
 void print_usage(const char *prog_name) {
     printf("Usage: %s [options]\n", prog_name);
+    printf("  Ver: %s Compiled at: %s\n", GIT_VERSION, VERSION_STRING);
     printf("Options:\n");
     printf("  --buffer-size <value>        Set the buffer size (default: %d)\n", FIFO_BUFFER_SIZE);
     printf("  --required-data-size <value> Set the required data size (default: %d)\n", REQUIRED_DATA_SIZE);
