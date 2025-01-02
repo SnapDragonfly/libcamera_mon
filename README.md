@@ -1,9 +1,9 @@
 # libcamera_mon
 
-libcamera-vid monitor tool, which parses log message to get FPS/bitrate etc.
+libcamera-vid monitor tool, which parses log message to get FPS/bitrate etc on raspberry pi system.
 
 
-`libcamera-vid`  -- pip --> `libcamera_mon`  -- proc --> `/proc/libcamera_proc`
+`libcamera-vid`  -- pipe --> `libcamera_mon`  -- proc --> `/proc/libcamera_proc`
 
 
 # How to build
