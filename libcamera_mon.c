@@ -219,8 +219,8 @@ int main(int argc, char *argv[]) {
                     char proc_buffer[PROC_BUFFER_SIZE];
 
                     snprintf(proc_buffer, PROC_BUFFER_SIZE,
-                            "frame=%d, fps=%.2f, size=%d, filtered=%.2f Mbps, bitrate=%.2f Mbps\n", 
-                                        frame, fps, size, bitrateFM, bitrateRM);
+                            "frame=%d, fps=%.2f, size=%d, bitrate=%.2f Mbps, fsize=%d, fbitrate=%.2f Mbps\n", 
+                                        frame, fps, size, bitrateRM, (int)filtered_size, bitrateFM);
 
                     ssize_t bytes_written = write(proc_fd, proc_buffer, strlen(proc_buffer));
                     if (bytes_written < 0) {
