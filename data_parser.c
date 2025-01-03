@@ -145,10 +145,9 @@ int parse_buf_data_arithmetic(RingBuffer *ring_buffer, int *frame, float *fps, i
                     frame_found = 0;
                     fps_found   = 0;
                     size_found  = 0;
+                    token = strtok(NULL, "\n");
                     continue;
                 }
-            } else {
-                continue;
             }
         }
 
@@ -160,6 +159,7 @@ int parse_buf_data_arithmetic(RingBuffer *ring_buffer, int *frame, float *fps, i
                 frame_found = 0;
                 fps_found   = 0;
                 size_found  = 0;
+                token = strtok(NULL, "\n");
                 continue;
             }
         } 
