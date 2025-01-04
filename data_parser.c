@@ -4,6 +4,7 @@
 
 #include "data_parser.h"
 #include "config.h"
+#include "log.h"
 
 int parse_buf_data_raw(RingBuffer *ring_buffer, int *frame, float *fps, int *size, size_t *parsed_bytes) {
     // Ensure the ring buffer has sufficient data to parse
@@ -28,19 +29,18 @@ int parse_buf_data_raw(RingBuffer *ring_buffer, int *frame, float *fps, int *siz
     char *token = strtok(temp_buffer, "\n");
 
     while (token) {
-        // Debug
-        //printf("token: %s\n", token);
+        LOG_DEBUG("token: %s\n", token);
 
         //safety measurement 1
         extern int required_data_size;
         if (token - temp_buffer > required_data_size*0.8) {
-            printf("safety measurement 1: %ld:%s\n", token - temp_buffer, token);
+            LOG_DEBUG("SM 1: %ld:%s\n", token - temp_buffer, token);
             break;
         }
 
         //safety measurement 2
         if (strlen(token) > 55) {
-            printf("safety measurement 2: %s\n", token);
+            LOG_DEBUG("SM 2: %s\n", token);
             return -5;
         }
         
@@ -112,19 +112,19 @@ int parse_buf_data_arithmetic(RingBuffer *ring_buffer, int *frame, float *fps, i
         size_t token_length = strlen(token);
 
         // Debugging to verify offsets
-        //printf("token: %s\n", token);
-        //printf("Current offset: %ld, token: %s\n", current_offset, token);
+        LOG_DEBUG("token: %s\n", token);
+        LOG_DEBUG("Current offset: %ld, token: %s\n", current_offset, token);
 
         // Safety measurement 1
         extern int required_data_size;
         if (current_offset > required_data_size * 0.8) {
-            printf("SM 1: %ld:%s\n", current_offset, token);
+            LOG_DEBUG("SM 1: %ld:%s\n", current_offset, token);
             break;
         }
 
         // Safety measurement 2
         if (token_length > 55) {
-            printf("SM 2: %s\n", token);
+            LOG_DEBUG("SM 2: %s\n", token);
             return -5;
         }
 
@@ -170,8 +170,7 @@ int parse_buf_data_arithmetic(RingBuffer *ring_buffer, int *frame, float *fps, i
 
             *parsed_bytes = current_offset;
 
-            // DEBUG
-            //printf("Count: %d Frame: %d Offset: %ld\n", data_count, temp_frame, *parsed_bytes);
+            LOG_DEBUG("Count: %d Frame: %d Offset: %ld\n", data_count, temp_frame, *parsed_bytes);
 
             frame_found = fps_found = size_found = 0;
         }

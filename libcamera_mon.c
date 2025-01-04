@@ -10,6 +10,7 @@
 #include "ring_buffer.h"
 #include "filter.h"
 #include "config.h"
+#include "log.h"
 #include "version.h"
 
 // Global variables to hold configurable parameters
@@ -22,6 +23,18 @@ char proc_path[DEFAULT_PATH_LENGTH] = PROC_PATH;
 SamplingMethod sampling_method      = SAMPLING_METHOD;
 float sampling_frequency            = SAMPLING_FREQUENCY;
 float cutoff_frequency              = CUTOFF_FREQUENCY;
+
+extern LogLevel global_log_level;
+
+LogLevel parse_log_level(const char *level_str) {
+    if (strcmp(level_str, "DEBUG") == 0) return LOG_DEBUG;
+    if (strcmp(level_str, "INFO") == 0) return LOG_INFO;
+    if (strcmp(level_str, "WARNING") == 0) return LOG_WARNING;
+    if (strcmp(level_str, "ERROR") == 0) return LOG_ERROR;
+    if (strcmp(level_str, "FATAL") == 0) return LOG_FATAL;
+    fprintf(stderr, "Unknown log level: %s\n", level_str);
+    exit(EXIT_FAILURE);
+}
 
 void print_usage(const char *prog_name) {
     printf("Usage: %s [options]\n", prog_name);
@@ -37,6 +50,8 @@ void print_usage(const char *prog_name) {
     printf("                               3: raw\n");
     printf("  --sample-frequency <value>   Set the sampling frequency in Hz (default: %d)\n", SAMPLING_FREQUENCY);
     printf("  --cutoff-frequency <value>   Set the cutoff frequency in Hz (default: %d)\n", CUTOFF_FREQUENCY);
+    printf("  --log-level <LEVEL>          Set log level, default: %s\n", "INFO");
+    printf("                               DEBUG, INFO, WARNING, ERROR, FATAL\n");
     printf("  --help                       Show this help message\n");
 }
 
@@ -59,6 +74,8 @@ int parse_arguments(int argc, char *argv[]) {
                 fprintf(stderr, "Invalid sampling method: %d. Valid values are 0, 1, 2, or 3.\n", sampling_method);
                 return -1;
             }
+        } else if (strcmp(argv[i], "--log-level") == 0 && i + 1 < argc) {
+            global_log_level = parse_log_level(argv[++i]);
         } else if (strcmp(argv[i], "--help") == 0) {
             print_usage(argv[0]);
             exit(0);
@@ -77,20 +94,20 @@ int ensure_path_exists(const char *path, int is_fifo, mode_t create_mode) {
         if (is_fifo) {
             // Create FIFO file
             if (mkfifo(path, create_mode) == -1) {
-                perror("Error creating FIFO file");
+                LOG_ERROR("Error creating FIFO file");
                 return -1;
             }
-            printf("FIFO file '%s' created successfully.\n", path);
+            LOG_INFO("FIFO file '%s' created successfully.\n", path);
         } else {
             // Create directory or regular file
             if (mkdir(path, create_mode) == -1 && errno != EEXIST) {
-                perror("Error creating directory");
+                LOG_ERROR("Error creating directory");
                 return -1;
             }
-            printf("Directory '%s' created successfully.\n", path);
+            LOG_INFO("Directory '%s' created successfully.\n", path);
         }
     } else {
-        printf("Path '%s' already exists.\n", path);
+        LOG_INFO("Path '%s' already exists.\n", path);
     }
     return 0;
 }
@@ -98,20 +115,20 @@ int ensure_path_exists(const char *path, int is_fifo, mode_t create_mode) {
 int open_fifo(const char *fifo_path) {
     int fifo_fd = open(fifo_path, O_RDONLY);
     if (fifo_fd == -1) {
-        perror("Error opening FIFO file");
+        LOG_ERROR("Error opening FIFO file");
         return -1;
     }
-    printf("FIFO file '%s' opened successfully. Waiting for input...\n", fifo_path);
+    LOG_INFO("FIFO file '%s' opened successfully. Waiting for input...\n", fifo_path);
     return fifo_fd;
 }
 
 int open_proc(const char *proc_path) {
     int proc_fd = open(proc_path, O_WRONLY);
     if (proc_fd == -1) {
-        perror("Error opening PROC file");
+        LOG_ERROR("Error opening PROC file");
         return -1;
     }
-    printf("PROC file '%s' opened successfully. Waiting for write...\n", proc_path);
+    LOG_INFO("PROC file '%s' opened successfully. Waiting for write...\n", proc_path);
     return proc_fd;
 }
 
@@ -122,20 +139,21 @@ int main(int argc, char *argv[]) {
     }
 
     // Print the configuration
-    printf("Configuration:\n");
-    printf("  Buffer size: %d\n", buffer_size);
-    printf("  Required data size: %d\n", required_data_size);
-    printf("  FIFO path: %s\n", fifo_path);
-    printf("  Sampling frequency: %.2f Hz\n", sampling_frequency);
-    printf("  Cutoff frequency: %.2f Hz\n", cutoff_frequency);
-    printf("  Sampling method: %d\n", sampling_method);
-    printf("    (0: arithmetic+filter, 1: raw+filter, 2: arithmetic, 3: raw)\n");
+    LOG_INFO("Configuration:\n");
+    LOG_INFO("  Buffer size: %d\n", buffer_size);
+    LOG_INFO("  Required data size: %d\n", required_data_size);
+    LOG_INFO("  FIFO path: %s\n", fifo_path);
+    LOG_INFO("  Sampling frequency: %.2f Hz\n", sampling_frequency);
+    LOG_INFO("  Cutoff frequency: %.2f Hz\n", cutoff_frequency);
+    LOG_INFO("  Sampling method: %d\n", sampling_method);
+    LOG_INFO("    (0: arithmetic+filter, 1: raw+filter, 2: arithmetic, 3: raw)\n");
+    LOG_INFO("Current log level: %d\n", global_log_level);
 
     float previous_output    = 0.0f;  // Initial previous output value
     
     // Calculate alpha based on cutoff frequency and sampling frequency
     float alpha = calculate_alpha(cutoff_frequency, sampling_frequency);
-    printf("Calculated alpha: %.4f\n", alpha);
+    LOG_INFO("Calculated alpha: %.4f\n", alpha);
 
     if (ensure_path_exists(DIR_PATH, 0, 0777) != 0) {
         return EXIT_FAILURE;
@@ -237,30 +255,32 @@ int main(int argc, char *argv[]) {
 
                     ssize_t bytes_written = write(proc_fd, proc_buffer, strlen(proc_buffer));
                     if (bytes_written < 0) {
-                        perror("Failed to write to /proc/libcamera_proc");
+                        LOG_ERROR("Failed to write to /proc/libcamera_proc");
                     } else {
-                        printf("%ld: %s", bytes_written, proc_buffer);
+                        LOG_INFO("%ld: %s", bytes_written, proc_buffer);
                     }
 
                     // Discard the parsed data from the ring buffer
                     remove_ring_buffer_data(&ring_buffer, parsed_bytes);
                 } else {
                     // Parsing failed, discard all data in the ring buffer
-                    printf("Failed(%d) to parse data. Discarding all data in the ring buffer.\n", parse_result);
+                    LOG_WARNING("Failed(%d) to parse data. Discarding all data in the ring buffer.\n", parse_result);
                     clear_ring_buffer(&ring_buffer);
                     break;  // Exit the loop to reattempt with new data
                 }
             }
 
             // Provide feedback to user
-            printf(".");
-            fflush(stdout);  // Force the buffer to flush
+            if (is_print_log_level(LOG_DEBUG)) {
+                printf(".");
+                fflush(stdout);  // Force the buffer to flush
+            }
         } else if (bytes_read == 0) {
             // End-of-file (FIFO was closed on the writer's end)
-            printf("No more data. Waiting for libcamera log message...\n");
+            LOG_INFO("No more data. Waiting for libcamera log message...\n");
             sleep(1); // Avoid busy-waiting
         } else {
-            perror("Error reading from FIFO");
+            LOG_FATAL("Error reading from FIFO");
             break;
         }
     }
@@ -268,8 +288,8 @@ int main(int argc, char *argv[]) {
     // Close the FIFO file
     close(fifo_fd);
     close(proc_fd);
-    printf("FIFO file '%s' closed.\n", fifo_path);
-    printf("PROC file '%s' closed.\n", proc_path);
+    LOG_INFO("FIFO file '%s' closed.\n", fifo_path);
+    LOG_INFO("PROC file '%s' closed.\n", proc_path);
 
     // Clean up ring buffer
     cleanup_ring_buffer(&ring_buffer);

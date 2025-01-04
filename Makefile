@@ -9,7 +9,7 @@ MODULE_PATH = $(PWD)
 
 # Executable targets and source files
 EX_TARGET = libcamera_mon
-EX_SRC = libcamera_mon.c ring_buffer.c data_parser.c filter.c
+EX_SRC = libcamera_mon.c ring_buffer.c data_parser.c filter.c log.c
 
 # Kernel module target and source files
 KO_TARGET = libcamera_proc
@@ -69,7 +69,7 @@ clean:
 	make -C $(KERNEL_BUILD_PATH) M=$(MODULE_PATH) clean
 
 # Phony targets
-.PHONY: all clean
+.PHONY: all clean version.h
 
 
 
