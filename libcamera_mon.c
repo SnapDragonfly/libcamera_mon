@@ -205,7 +205,20 @@ int main(int argc, char *argv[]) {
                     switch(sampling_method) {
                         case ARITHMETIC_FILTER:
                         case RAW_FILTER:
-                            filtered_size = low_pass_filter(size, &previous_output, alpha);
+                            static struct timespec previous_time = {0, 0};
+                            struct timespec current_time;
+                            double delta_time;
+
+                            clock_gettime(CLOCK_MONOTONIC, &current_time);
+                            if (previous_time.tv_sec == 0 && previous_time.tv_nsec == 0) {
+                                // default 0 for the first time
+                                delta_time = 0.0;
+                            } else {
+                                delta_time = calculate_delta_time(&previous_time, &current_time);
+                            }
+                            previous_time = current_time;
+
+                            filtered_size = low_pass_filter_time(size, &previous_output, alpha, delta_time);
                             break;
                         case ARITHMETIC:
                         case RAW:

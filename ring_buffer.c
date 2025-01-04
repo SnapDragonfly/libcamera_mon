@@ -40,8 +40,14 @@ int read_ring_buffer(RingBuffer *ring_buffer, char *data, size_t size) {
 }
 
 void remove_ring_buffer_data(RingBuffer *ring_buffer, size_t size) {
+    // Debug
+    //printf("ring before, start: %ld size: %ld remove: %ld\n", ring_buffer->start, ring_buffer->data_size, size);
+
     ring_buffer->start = (ring_buffer->start + size) % ring_buffer->size;
     ring_buffer->data_size -= size;
+
+    // Debug
+    //printf("ring remove, start: %ld size: %ld remove: %ld\n", ring_buffer->start, ring_buffer->data_size, size);
 }
 
 void clear_ring_buffer(RingBuffer *ring_buffer) {
